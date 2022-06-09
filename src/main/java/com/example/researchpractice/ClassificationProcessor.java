@@ -32,7 +32,7 @@ public class ClassificationProcessor {
             response.containerTitle(extractContainerTitle(dxDoi));
             response.classINFO("D");
 
-            // Implementation for journal-article here
+            // TODO - Implementation for journal-article here
         } else if (type.equals("paper-conference")) {
             String event = extractEvent(dxDoi);
             if (!event.equals("NONE")) {
