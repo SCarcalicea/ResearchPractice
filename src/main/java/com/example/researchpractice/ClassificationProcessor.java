@@ -123,7 +123,7 @@ public class ClassificationProcessor {
                 if (info) {
                     String publisher = extractPublisher(dxDoi);
                     List<Sense> yearExactMatch = new ArrayList<>();
-                    if (publisher.contains(" ")) {
+                    if (publisher.contains("Springer")) {
                         yearExactMatch = senseRepository.findAllByNaamAndPlaatsOrderByJaar(publisher.substring(0, publisher.indexOf(" ")), extractPublisherLocation(dxDoi));
                     } else {
                         yearExactMatch = senseRepository.findAllByNaamAndPlaatsOrderByJaar(publisher, extractPublisherLocation(dxDoi));
