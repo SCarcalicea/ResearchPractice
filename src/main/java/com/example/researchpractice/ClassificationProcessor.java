@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -30,108 +31,108 @@ public class ClassificationProcessor {
         String type = extractType(dxDoi);
         boolean isInWos = wos != null && !wos.equals("");
         response.isInWos(isInWos);
-        boolean info = true;  // TODO - Assuming that info is always true. In the algorithm there is no statement about it.
+        boolean info = true;  // TODO - Assuming that info is always true. In the algorithm description there is no statement about its value.
         response.isInWos(info);
         String classCNATDCU = "";
         String classINFO = "";
 
-        if (type.equals("journal-article")) {
-            String issn = extractISSN(dxDoi);
-            String conainterTitle = extractContainerTitle(dxDoi);
-            response.issn(issn);
-            response.containerTitle(conainterTitle);
-            classINFO = "D";
-            response.classINFO(classINFO);
+        switch (type) {
+            case "journal-article" -> { // Tested with "10.1007/s11831-020-09492-4" and "10.1109/ACCESS.2019.2943498"
+                String issn = extractISSN(dxDoi);
+                String conainterTitle = extractContainerTitle(dxDoi);
+                response.issn(issn);
+                response.containerTitle(conainterTitle);
+                classINFO = "D";
+                response.classINFO(classINFO);
+                List<Scie_ssci> scieScsi = scie_scsiRepository.findAllByIssnOrderByYear(issn);
+                if (!scieScsi.isEmpty()) {
 
-            List<Scie_ssci> scieScsi = scie_scsiRepository.findAllByIssnOrderByYear(issn);
-            if (!scieScsi.isEmpty()) {
+                    Comparator<Scie_ssci> compareByJournalImpactFactor = Comparator.comparingDouble(o -> o.journalImpactFactor);
+                    Comparator<Scie_ssci> compareByArticleInfluenceScore = Comparator.comparingDouble(o -> o.articleInfluenceScore);
+                    scieScsi.sort(compareByJournalImpactFactor);
 
-                Comparator<Scie_ssci> compareByJournalImpactFactor = Comparator.comparingDouble(o -> o.journalImpactFactor);
-                Comparator<Scie_ssci> compareByArticleInfluenceScore = Comparator.comparingDouble(o -> o.articleInfluenceScore);
-                scieScsi.sort(compareByJournalImpactFactor);
-
-                // TODO - Logic here might be different. Assuming that I need to parse each entry from the files, when do I stop ???
-                for (Scie_ssci article : scieScsi) {
-                    /* marker */
-                    processMarkerLogic(response, info, classCNATDCU, classINFO, conainterTitle, scieScsi, article);
-                    /* end marker */
-
-                    // TODO - If articleInfluenceScore is positive. This might change based on the above assumption.
-                    if (article.articleInfluenceScore > 0) {
-                        scieScsi.sort(compareByArticleInfluenceScore);
-
+                    // TODO - Logic here might be different. Assuming that I need to parse each entry from the files, when do I stop ???
+                    for (Scie_ssci article : scieScsi) {
                         /* marker */
                         processMarkerLogic(response, info, classCNATDCU, classINFO, conainterTitle, scieScsi, article);
                         /* end marker */
+
+                        // TODO - If articleInfluenceScore is positive. This might change based on the above assumption.
+                        if (article.articleInfluenceScore > 0) {
+                            scieScsi.sort(compareByArticleInfluenceScore);
+
+                            /* marker */
+                            processMarkerLogic(response, info, classCNATDCU, classINFO, conainterTitle, scieScsi, article);
+                            /* end marker */
+                        }
+                        break;
                     }
-                    break;
                 }
-            }
+                if (classCNATDCU.equals("") && isInWos) {
+                    response.classCNATDCU("ISI ESCI");
+                }
 
-            if (classCNATDCU.equals("") && isInWos) {
-                response.classCNATDCU("ISI ESCI");
-            }
-
-            // TODO - This will always return a web page, a java script script is processing the request
-            if (info && classINFO.equals("D")) {
-                try {
-                    URL obj = new URL("https://plu.mx/plum/a/?doi=" + xDoi + "/" + yDoi);
-                    HttpURLConnection conn = (HttpURLConnection) obj.openConnection();;
-                    HttpURLConnection.setFollowRedirects(true);
-                    if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                        response.classINFO("C");
+                // TODO - This will always return a web page, a java script script is processing the request
+                if (info && classINFO.equals("D")) {
+                    try {
+                        URL obj = new URL("https://plu.mx/plum/a/?doi=" + xDoi + "/" + yDoi);
+                        HttpURLConnection conn = (HttpURLConnection) obj.openConnection();
+                        ;
+                        HttpURLConnection.setFollowRedirects(true);
+                        if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                            response.classINFO("C");
+                        }
+                    } catch (MalformedURLException e) {
+                        // Ignore for now
+                    } catch (IOException e) {
+                        // Ignore for now
                     }
-                } catch (MalformedURLException e) {
-                    // Ignore for now
-                }  catch (IOException e) {
-                    // Ignore for now
                 }
-            }
+            } case "paper-conference" -> {
+                String event = extractEvent(dxDoi);
+                if (!event.equals("NONE")) {
+                    response.acronim(event.substring(0, event.indexOf(" ")));
+                    response.event_title(event.substring(event.indexOf(":")));
+                }
+                if (isInWos) {
+                    response.classCNATDCU("ISI PROC");
+                } else if (xDoi.equals("10.1109")) {
+                    response.classCNATDCU("IEEE PROC");
+                }
+                if (info) {
+                    response.classINFO("D");
 
-        } else if (type.equals("paper-conference")) {
-            String event = extractEvent(dxDoi);
-            if (!event.equals("NONE")) {
-                response.acronim(event.substring(0, event.indexOf(" ")));
-                response.event_title(event.substring(event.indexOf(":")));
-            }
-
-            if (isInWos) {
-                response.classCNATDCU("ISI PROC");
-            } else if (xDoi.equals("10.1109")) {
-                response.classCNATDCU("IEEE PROC");
-            }
-
-            if (info) {
-                response.classINFO("D");
-
-                // TODO - Core file data seems to be random, some processing is needed here
+                    // TODO - Core file data seems to be random, some processing is needed here
 //            search exact acronym in CORE with closest year
 //            if found
 //            if match of event_title in 75% then
 //            classINFO=class from CORE (A*, A, B or C)
 
-            }
-
-
-            // Implementation for paper-conference here
-        } else if (type.equals("chapter") || type.equals("book")) { // Tested with "10.1007/978-3-319-10530-7"
-            response.publisher(extractPublisher(dxDoi));
-            response.publisherLocation(extractPublisherLocation(dxDoi));
-
-            if (info) {
-                String publisher = extractPublisher(dxDoi);
-                List<Sense> yearExactMatch = senseRepository.findAllByNaamAndPlaatsOrderByJaar(publisher.substring(0, publisher.indexOf(" ")),extractPublisherLocation(dxDoi));
-                boolean exactMatch = false;
-                for (Sense sense : yearExactMatch) {
-                    if (sense.getJaar().equals(extractYear(dxDoi))) {
-                        exactMatch = true;
-                        response.classINFO(sense.getWaardering());
-                        break;
-                    }
                 }
 
-                if (!exactMatch && yearExactMatch != null && !yearExactMatch.isEmpty()) {
-                    response.classINFO(yearExactMatch.get(yearExactMatch.size()-1).getWaardering());
+            } case "chapter", "book" -> {  // Tested with "10.1007/978-3-319-10530-7"
+                response.publisher(extractPublisher(dxDoi));
+                response.publisherLocation(extractPublisherLocation(dxDoi));
+                if (info) {
+                    String publisher = extractPublisher(dxDoi);
+                    List<Sense> yearExactMatch = new ArrayList<>();
+                    if (publisher.contains(" ")) {
+                        yearExactMatch = senseRepository.findAllByNaamAndPlaatsOrderByJaar(publisher.substring(0, publisher.indexOf(" ")), extractPublisherLocation(dxDoi));
+                    } else {
+                        yearExactMatch = senseRepository.findAllByNaamAndPlaatsOrderByJaar(publisher, extractPublisherLocation(dxDoi));
+                    }
+                    boolean exactMatch = false;
+                    for (Sense sense : yearExactMatch) {
+                        if (sense.getJaar().equals(extractYear(dxDoi))) {
+                            exactMatch = true;
+                            response.classINFO(sense.getWaardering());
+                            break;
+                        }
+                    }
+
+                    if (!exactMatch && yearExactMatch != null && !yearExactMatch.isEmpty()) {
+                        response.classINFO(yearExactMatch.get(yearExactMatch.size() - 1).getWaardering());
+                    }
                 }
             }
         }
@@ -198,7 +199,7 @@ public class ClassificationProcessor {
 
     private String extractContainerTitle(DxDoi dxDoi) {
         return Optional.ofNullable(dxDoi)
-                .map(input -> input.containerTitle)
+                .map(input -> input.containerTitle.toString())
                 .orElse("NONE");
     }
 

@@ -35,7 +35,7 @@ public class DxDoi{
     public String member;
     public ArrayList<Reference> reference;
     @JsonProperty("container-title")
-    public String containerTitle;
+    public Object containerTitle;
     @JsonProperty("original-title")
     public ArrayList<Object> originalTitle;
     public String language;
