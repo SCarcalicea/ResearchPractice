@@ -11,18 +11,14 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+
 @AllArgsConstructor
 public class ClassificationProcessor {
 
     public SCIE_SCSIRepository scie_scsiRepository;
     public SenseRepository senseRepository;
-
     public CoreRepository coreRepository;
-
     private String xDoi;
     private String yDoi;
 
@@ -48,39 +44,34 @@ public class ClassificationProcessor {
                 classINFO = "D";
                 response.classINFO(classINFO);
                 List<Scie_ssci> scieScsi = scie_scsiRepository.findAllByIssnOrderByYear(issn);
-                if (!scieScsi.isEmpty()) {
+                if (!scieScsi.isEmpty()) {  // Article found
 
                     Comparator<Scie_ssci> compareByJournalImpactFactor = Comparator.comparingDouble(o -> o.journalImpactFactor);
                     Comparator<Scie_ssci> compareByArticleInfluenceScore = Comparator.comparingDouble(o -> o.articleInfluenceScore);
-                    scieScsi.sort(compareByJournalImpactFactor);
 
                     // TODO - Logic here might be different. Assuming that I need to parse each entry from the files, when do I stop ???
+                    scieScsi.sort(compareByJournalImpactFactor);
                     for (Scie_ssci article : scieScsi) {
-                        /* marker */
                         processMarkerLogic(response, info, classCNATDCU, classINFO, conainterTitle, scieScsi, article);
-                        /* end marker */
 
                         // TODO - If articleInfluenceScore is positive. This might change based on the above assumption.
                         if (article.articleInfluenceScore > 0) {
                             scieScsi.sort(compareByArticleInfluenceScore);
-
-                            /* marker */
                             processMarkerLogic(response, info, classCNATDCU, classINFO, conainterTitle, scieScsi, article);
-                            /* end marker */
                         }
                         break;
                     }
                 }
-                if (classCNATDCU.equals("") && isInWos) {
+
+                if (classCNATDCU.equals("") && isInWos) { // Artile not found but has WoS
                     response.classCNATDCU("ISI ESCI");
                 }
 
-                // TODO - This will always return a web page, a java script script is processing the request
+                // TODO - This will always return a web page, a java script script is processing the request.
                 if (info && classINFO.equals("D")) {
                     try {
                         URL obj = new URL("https://plu.mx/plum/a/?doi=" + xDoi + "/" + yDoi);
                         HttpURLConnection conn = (HttpURLConnection) obj.openConnection();
-                        ;
                         HttpURLConnection.setFollowRedirects(true);
                         if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
                             response.classINFO("C");
@@ -91,7 +82,7 @@ public class ClassificationProcessor {
                         // Ignore for now
                     }
                 }
-            } case "paper-conference" -> {
+            } case "paper-conference" -> {  // TODO - Find DOI for this type and test algorithm
                 String event = extractEvent(dxDoi);
                 String acronim = event;
                 String event_title = "";
@@ -159,33 +150,40 @@ public class ClassificationProcessor {
         double rank = scieScsi.indexOf(article);
         if (rank <= Math.ceil(0.25 * scieScsi.size())) {
             response.classCNATDCU("ISI ROSU");
+            classCNATDCU = "ISI ROSU";
             if (conainterTitle.contains("NATURE")) {
                 response.classCNATDCU("NATURE");
+                classCNATDCU = "NATURE";
 
             }
         } else if (rank <= Math.ceil(0.5 * scieScsi.size())) {
             if (!classCNATDCU.equals("ISI ROSU")) {
                 response.classCNATDCU("ISI GALBEN");
+                classCNATDCU = "ISI GALBEN";
             }
         } else {
             if (!classCNATDCU.equals("ISI ROSU") || !classCNATDCU.equals("ISI GALBEN")) {
                 response.classCNATDCU("ISI ALB");
+                classCNATDCU = "ISI ALB";
             }
         }
 
         if (info) {
             double x = Math.floor(0.2 * Math.ceil(0.25 * scieScsi.size()));
-
             if (rank <= x) {
                 response.classINFO("A*");
+                classINFO = "A*";
             } else if (rank <= Math.ceil(0.25 * scieScsi.size()) + x) {
                 if (!classINFO.equals("A*")) {
                     response.classINFO("A");
+                    classINFO = "A";
                 } else if (rank <= Math.ceil(0.5 * scieScsi.size()) + x) {
                     if (!classINFO.equals("A*") || !classINFO.equals("A")) {
                         response.classINFO("B");
-                    } else if (!classINFO.equals("A*") || !classINFO.equals("A") || !classINFO.equals("B")) {
+                        classINFO = "B";
+                    } else if (!classINFO.equals("B")) {
                         response.classINFO("C");
+                        classINFO = "C";
                     }
                 }
             }
