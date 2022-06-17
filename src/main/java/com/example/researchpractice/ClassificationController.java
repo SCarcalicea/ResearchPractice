@@ -16,9 +16,6 @@ import java.util.Collections;
 public class ClassificationController {
 
     @Autowired
-    RestTemplate restTemplate;
-
-    @Autowired
     public SCIE_SCSIRepository scie_scsiRepository;
 
     @Autowired

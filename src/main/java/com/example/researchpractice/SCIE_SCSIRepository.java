@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface SCIE_SCSIRepository extends MongoRepository<Scie_ssci, String> {
 
-    List<Scie_ssci> findAllByIssnLike(String issn);
+    List<Scie_ssci> findAllByIssnOrderByYear(String issn);
 }
