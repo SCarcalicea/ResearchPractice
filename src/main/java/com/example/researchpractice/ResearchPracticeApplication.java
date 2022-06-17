@@ -38,14 +38,14 @@ public class ResearchPracticeApplication {
 
     @PostConstruct
     public void init() {
-       boolean dbWasInitialized = dbChecker.findAll().stream().map(dbPreloaderChecker -> dbPreloaderChecker.skipDBInit).findFirst().orElse(false);
-       if (!dbWasInitialized) {
-           loadSCIEData();
-           loadSSCIData();
-           loadSENSEData();
+//       boolean dbWasInitialized = dbChecker.findAll().stream().map(dbPreloaderChecker -> dbPreloaderChecker.skipDBInit).findFirst().orElse(false);
+//       if (!dbWasInitialized) {
+//           loadSCIEData();
+//           loadSSCIData();
+//           loadSENSEData();
            loadCOREData();
-           dbChecker.save(new DBPreloaderChecker(true));
-       }
+//           dbChecker.save(new DBPreloaderChecker(true));
+//       }
     }
 
     public void loadSCIEData() {
@@ -96,19 +96,22 @@ public class ResearchPracticeApplication {
     private void loadCOREData() {
 
         List<String> coreYears = Arrays.asList("2008", "2010", "2013", "2014", "2017", "2018", "2020", "2021");
+        List<Character> separators = Arrays.asList('\t', ' ');
         for(String year : coreYears) {
             String inputFromFile = getResourceFileAsString("CORE/CORE-" + year + ".csv");
-            CSVReader csvReader = new CSVReader(new StringReader(inputFromFile), ' ');
+            char separator = year.equals("2021") ? separators.get(1) : separators.get(0);
+            CSVReader csvReader = new CSVReader(new StringReader(inputFromFile), separator);
+
             String[] values;
             while (true) {
                 try {
                     if ((values = csvReader.readNext()) == null) break;
                     Core.CoreBuilder core = Core.builder();
                     core.id(getOrNullFromArray(values, 0));
-                    core.type(getOrNullFromArray(values, 1));
-                    core.subtype(getOrNullFromArray(values, 2));
+                    core.title(getOrNullFromArray(values, 1));
+                    core.acronym(getOrNullFromArray(values, 2));
                     core.coreYear(getOrNullFromArray(values, 3));
-                    core.rank(getOrNullFromArray(values, 4));
+                    core.classInfo(getOrNullFromArray(values, 4));
                     core.isSomething(getOrNullFromArray(values, 5));
                     core.subId(getOrNullFromArray(values, 6));
                     core.subSubId(getOrNullFromArray(values, 7));

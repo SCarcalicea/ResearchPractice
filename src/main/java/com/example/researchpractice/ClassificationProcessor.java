@@ -1,5 +1,6 @@
 package com.example.researchpractice;
 
+import com.example.researchpractice.model.files.Core;
 import com.example.researchpractice.model.response.DOIClassificationResponse;
 import com.example.researchpractice.model.basemodel.DxDoi;
 import com.example.researchpractice.model.files.Scie_ssci;
@@ -19,6 +20,8 @@ public class ClassificationProcessor {
 
     public SCIE_SCSIRepository scie_scsiRepository;
     public SenseRepository senseRepository;
+
+    public CoreRepository coreRepository;
 
     private String xDoi;
     private String yDoi;
@@ -90,24 +93,37 @@ public class ClassificationProcessor {
                 }
             } case "paper-conference" -> {
                 String event = extractEvent(dxDoi);
+                String acronim = event;
+                String event_title = "";
+
                 if (!event.equals("NONE")) {
-                    response.acronim(event.substring(0, event.indexOf(" ")));
-                    response.event_title(event.substring(event.indexOf(":")));
+                    if (acronim.contains(" ")) {
+                        acronim = event.substring(0, event.indexOf(" "));
+                        if (acronim.contains("/")) {
+                            acronim = event.substring(0, event.indexOf("/"));
+                        }
+                    }
+
+                    if (event.contains(":")) {
+                        event_title = event.substring(event.indexOf(":"));
+                        response.event_title(event_title);
+                    }
                 }
+
                 if (isInWos) {
                     response.classCNATDCU("ISI PROC");
                 } else if (xDoi.equals("10.1109")) {
                     response.classCNATDCU("IEEE PROC");
                 }
+
                 if (info) {
                     response.classINFO("D");
-
-                    // TODO - Core file data seems to be random, some processing is needed here
-//            search exact acronym in CORE with closest year
-//            if found
-//            if match of event_title in 75% then
-//            classINFO=class from CORE (A*, A, B or C)
-
+                    List<Core> conferences = coreRepository.findAllByAcronymOrderByCoreYear(acronim);
+                    for (Core conference : conferences) {
+                        if (conference.getTitle().equals(event_title)) {
+                            response.classINFO(conference.getClassInfo());
+                        }
+                    }
                 }
 
             } case "chapter", "book" -> {  // Tested with "10.1007/978-3-319-10530-7"

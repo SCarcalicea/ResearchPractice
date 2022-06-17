@@ -21,6 +21,9 @@ public class ClassificationController {
     @Autowired
     public SenseRepository senseRepository;
 
+    @Autowired
+    public CoreRepository coreRepository;
+
     @GetMapping("/api/dxdoi/get")
     @ResponseBody
     public DxDoi getDxDoiJson() {
@@ -47,7 +50,7 @@ public class ClassificationController {
     @ResponseBody
     public DOIClassificationResponse getClassification(@PathVariable("x") String firstPart, @PathVariable("y") String secondPart) {
         String doi = firstPart + "/" + secondPart;
-        ClassificationProcessor processor = new ClassificationProcessor(scie_scsiRepository, senseRepository, firstPart, secondPart);
+        ClassificationProcessor processor = new ClassificationProcessor(scie_scsiRepository, senseRepository, coreRepository, firstPart, secondPart);
         return processor.process(getDxDoiObject(doi), getWos(doi));
     }
 
