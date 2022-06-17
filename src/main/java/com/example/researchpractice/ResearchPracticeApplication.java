@@ -1,8 +1,9 @@
 package com.example.researchpractice;
 
-import com.example.researchpractice.model.Core;
-import com.example.researchpractice.model.Scie_ssci;
-import com.example.researchpractice.model.Sense;
+import com.example.researchpractice.model.files.Core;
+import com.example.researchpractice.model.files.Scie_ssci;
+import com.example.researchpractice.model.files.Sense;
+import com.example.researchpractice.model.preloader.DBPreloaderChecker;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVReader;
@@ -28,16 +29,23 @@ public class ResearchPracticeApplication {
     @Autowired
     public CoreRepository coreRepository;
 
+    @Autowired
+    public DBInitCheckerRepository dbChecker;
+
     public static void main(String[] args) {
         SpringApplication.run(ResearchPracticeApplication.class, args);
     }
 
     @PostConstruct
     public void init() {
-//        loadSCIEData();
-//        loadSSCIData();
-//        loadSENSEData();
-//        loadCOREData();
+       boolean dbWasInitialized = dbChecker.findAll().stream().map(dbPreloaderChecker -> dbPreloaderChecker.skipDBInit).findFirst().orElse(false);
+       if (!dbWasInitialized) {
+           loadSCIEData();
+           loadSSCIData();
+           loadSENSEData();
+           loadCOREData();
+           dbChecker.save(new DBPreloaderChecker(true));
+       }
     }
 
     public void loadSCIEData() {
@@ -45,7 +53,6 @@ public class ResearchPracticeApplication {
             Integer year = 1997 + i;
             String inputFile = "SCIE/journals-SCIE-year-" + year +".json";
             processFile(inputFile);
-            break;
         }
     }
 
@@ -54,7 +61,6 @@ public class ResearchPracticeApplication {
             Integer year = 1997 + i;
             String inputFile = "SSCI/journals-SSCI-year-" + year +".json";
             processFile(inputFile);
-            break;
         }
     }
 

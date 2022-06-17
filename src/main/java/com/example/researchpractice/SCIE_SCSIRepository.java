@@ -1,6 +1,6 @@
 package com.example.researchpractice;
 
-import com.example.researchpractice.model.Scie_ssci;
+import com.example.researchpractice.model.files.Scie_ssci;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;

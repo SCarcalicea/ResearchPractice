@@ -1,4 +1,4 @@
-package com.example.researchpractice.model;
+package com.example.researchpractice.model.files;
 
 import java.util.ArrayList;
 

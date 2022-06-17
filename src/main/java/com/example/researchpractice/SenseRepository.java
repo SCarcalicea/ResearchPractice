@@ -1,6 +1,6 @@
 package com.example.researchpractice;
 
-import com.example.researchpractice.model.Sense;
+import com.example.researchpractice.model.files.Sense;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;

@@ -1,9 +1,9 @@
 package com.example.researchpractice;
 
-import com.example.researchpractice.model.DOIClassificationResponse;
-import com.example.researchpractice.model.DxDoi;
-import com.example.researchpractice.model.Scie_ssci;
-import com.example.researchpractice.model.Sense;
+import com.example.researchpractice.model.response.DOIClassificationResponse;
+import com.example.researchpractice.model.basemodel.DxDoi;
+import com.example.researchpractice.model.files.Scie_ssci;
+import com.example.researchpractice.model.files.Sense;
 import lombok.AllArgsConstructor;
 
 import java.io.IOException;
@@ -50,7 +50,8 @@ public class ClassificationProcessor {
                 Comparator<Scie_ssci> compareByArticleInfluenceScore = Comparator.comparingDouble(o -> o.articleInfluenceScore);
                 scieScsi.sort(compareByJournalImpactFactor);
 
-                for (Scie_ssci article : scieScsi) { // TODO - Logic here might be different. Assuming that I need to parse each entry from the files ???
+                // TODO - Logic here might be different. Assuming that I need to parse each entry from the files, when do I stop ???
+                for (Scie_ssci article : scieScsi) {
                     /* marker */
                     processMarkerLogic(response, info, classCNATDCU, classINFO, conainterTitle, scieScsi, article);
                     /* end marker */
@@ -63,6 +64,7 @@ public class ClassificationProcessor {
                         processMarkerLogic(response, info, classCNATDCU, classINFO, conainterTitle, scieScsi, article);
                         /* end marker */
                     }
+                    break;
                 }
             }
 

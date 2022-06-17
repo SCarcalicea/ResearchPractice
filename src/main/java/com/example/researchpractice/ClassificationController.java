@@ -1,7 +1,7 @@
 package com.example.researchpractice;
 
-import com.example.researchpractice.model.DOIClassificationResponse;
-import com.example.researchpractice.model.DxDoi;
+import com.example.researchpractice.model.response.DOIClassificationResponse;
+import com.example.researchpractice.model.basemodel.DxDoi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Controller;

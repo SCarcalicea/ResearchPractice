@@ -1,5 +1,6 @@
-package com.example.researchpractice.model;
+package com.example.researchpractice.model.basemodel;
 
+import com.example.researchpractice.model.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.ArrayList;
